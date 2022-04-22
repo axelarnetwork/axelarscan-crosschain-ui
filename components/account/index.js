@@ -104,7 +104,7 @@ export default function Account() {
               sort: [
                 { height: 'desc' },
               ],
-              size: 1000,
+              size: 100,
             })
 
             setLinkedAddressesData(response)
@@ -447,7 +447,7 @@ export default function Account() {
               sort: [
                 { 'send.created_at.ms': 'desc' },
               ],
-              size: 1000,
+              size: 100,
             })
 
             setTransactions({ data: response?.data || [], txsTrigger })
@@ -481,7 +481,7 @@ export default function Account() {
           sort: [
             { height: 'desc' },
           ],
-          size: 1000,
+          size: 100,
         })
 
         if (response?.data?.length > 0) {

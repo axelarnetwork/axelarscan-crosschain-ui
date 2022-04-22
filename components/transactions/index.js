@@ -87,7 +87,7 @@ export default function TransactionsIndex() {
             sort: [
               { 'send.created_at.ms': 'desc' },
             ],
-            size: 500,
+            size: 100,
           })
 
           setTransactions({ data: response?.data || [], txsTrigger })
@@ -120,7 +120,7 @@ export default function TransactionsIndex() {
           sort: [
             { height: 'desc' },
           ],
-          size: 1000,
+          size: 100,
         })
 
         if (response?.data?.length > 0) {
