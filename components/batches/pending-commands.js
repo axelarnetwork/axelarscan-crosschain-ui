@@ -319,7 +319,7 @@ export default function PendingCommands({ chain }) {
                 disableSortBy: true,
                 Cell: props => {
                   const chainData = chain
-                  const asset = assets_data?.find(a => a?.symbol?.toLowerCase().replace('axelar', '') === props.row.original.params?.symbol?.toLowerCase())
+                  const asset = assets_data?.find(a => a?.symbol?.toLowerCase() === props.row.original.params?.symbol?.toLowerCase() || a?.contracts?.findIndex(c => c?.chain_id === chainData?.chain_id && c.symbol?.toLowerCase() === props.row.original.params?.symbol?.toLowerCase()) > -1)
                   const contract = asset?.contracts?.find(c => c?.chain_id === chainData?.chain_id)
 
                   return !props.row.original.skeleton ?

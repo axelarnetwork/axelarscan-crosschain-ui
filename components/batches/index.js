@@ -329,7 +329,7 @@ export default function Batches() {
                     {props.value?.length > 0 ?
                       <div className="flex flex-col space-y-2.5 mb-6">
                         {props.value.filter(_command => _command).map((_command, i) => {
-                          const asset = assets_data?.find(a => a?.symbol?.toLowerCase().replace('axelar', '') === _command.params?.symbol?.toLowerCase())
+                          const asset = assets_data?.find(a => a?.symbol?.toLowerCase() === _command.params?.symbol?.toLowerCase() || a?.contracts?.findIndex(c => c?.chain_id === chain?.chain_id && c.symbol?.toLowerCase() === _command.params?.symbol?.toLowerCase()) > -1)
                           const contract = asset?.contracts?.find(c => c.chain_id === chain?.chain_id)
 
                           return (
