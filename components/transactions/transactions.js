@@ -249,6 +249,7 @@ export default function Transactions({ page_size = 10, data, linkedAddresses, ad
               const asset = assets_data?.find(a => [a?.id?.toLowerCase()].concat(Array.isArray(a?.ibc) ? a.ibc.map(ibc => ibc?.ibc_denom?.toLowerCase()) : a?.ibc?.toLowerCase()).includes(props.row.original.send?.denom?.toLowerCase()))
               const contract = asset?.contracts?.find(c => c.chain_id === toChain?.chain_id)
               const fromContract = asset?.contracts?.find(c => c.chain_id === fromChain?.chain_id)
+              const fromIBC = asset?.ibc?.find(c => c.chain_id === fromChain?.id)
 
               const addToMetaMaskButton = contract && (
                 <button
@@ -275,7 +276,7 @@ export default function Transactions({ page_size = 10, data, linkedAddresses, ad
                         />
                       )}
                       <span className="flex items-center text-gray-700 dark:text-gray-300 text-sm font-semibold">
-                        <span className="font-mono mr-1.5">{typeof props.value === 'number' ? numberFormat(BigNumber(props.value).shiftedBy(-(fromContract?.contract_decimals || contract?.contract_decimals || 6)).toNumber(), '0,0.00000000', true) : '-'}</span>
+                        <span className="font-mono mr-1.5">{typeof props.value === 'number' ? numberFormat(BigNumber(props.value).shiftedBy(-(fromContract?.contract_decimals || fromIBC?.contract_decimals || asset?.contract_decimals || 6)).toNumber(), '0,0.00000000', true) : '-'}</span>
                         <span className="normal-case">{ellipseAddress(asset?.symbol || props.row.original.send?.denom, 12)}</span>
                       </span>
                     </div>
