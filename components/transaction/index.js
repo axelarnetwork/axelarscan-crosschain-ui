@@ -75,7 +75,7 @@ export default function Transaction() {
 
   useEffect(() => {
     const getData = async () => {
-      if (tx) {
+      if (tx && assets_data) {
         let data, linked
         let query = {
           query: {
@@ -201,7 +201,7 @@ export default function Transaction() {
     return () => {
       clearInterval(interval)
     }
-  }, [tx])
+  }, [tx, assets_data])
 
   const addTokenToMetaMask = async (chain_id, contract) => {
     if (web3 && contract) {
