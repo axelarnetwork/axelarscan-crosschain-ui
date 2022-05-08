@@ -263,6 +263,7 @@ export default function Transaction() {
   const toChain = chains_data?.find(c => c.id === linked?.recipient_chain) || cosmos_chains_data?.find(c => c.id === linked?.recipient_chain) || chains_data?.find(c => c.id === send?.recipient_chain) || cosmos_chains_data?.find(c => c.id === send?.recipient_chain)
   const fromContract = asset?.contracts?.find(c => c.chain_id === fromChain?.chain_id)
   const toContract = asset?.contracts?.find(c => c.chain_id === toChain?.chain_id)
+  const fromIBC = asset?.ibc?.find(c => c.chain_id === fromChain?.id)
 
   const addSendingTokenToMetaMaskButton = fromContract && fromContract.contract_address !== constants.AddressZero && (
     <button
@@ -289,7 +290,7 @@ export default function Transaction() {
     </button>
   )
 
-  const insufficient_fee = transferFee && send?.amount && transferFee.amount > BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || 6)).toNumber()
+  const insufficient_fee = transferFee && send?.amount && transferFee.amount > BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || fromIBC?.contract_decimals || 6)).toNumber()
 
   return (
     <div className="max-w-6.5xl mb-3 mx-auto">
@@ -381,7 +382,7 @@ export default function Transaction() {
                     }
                     <div className="flex flex-col items-center space-y-2 mt-0.5">
                       <div className="max-w-min bg-gray-100 dark:bg-gray-800 rounded-xl text-xs space-x-1 py-0.5 px-2">
-                        <span className="font-mono font-semibold">{send?.amount ? numberFormat(BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || 6)).toNumber(), '0,0.00000000', true) : '-'}</span>
+                        <span className="font-mono font-semibold">{send?.amount ? numberFormat(BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || fromIBC?.contract_decimals || 6)).toNumber(), '0,0.00000000', true) : '-'}</span>
                       </div>
                       <GoCode size={16} />
                     </div>
