@@ -22,6 +22,7 @@ import SectionTitle from '../section-title'
 
 import { linkedAddresses, crosschainTxs, evmVotes } from '../../lib/api/opensearch'
 import { axelard } from '../../lib/api/executor'
+import { transferFee as getTransferFee } from '../../lib/api/cosmos'
 import { domains, getENS } from '../../lib/api/ens'
 import { chainTitle } from '../../lib/object/chain'
 import { numberFormat, ellipseAddress, sleep } from '../../lib/utils'
@@ -46,6 +47,7 @@ export default function Transaction() {
 
   const [transaction, setTransaction] = useState(null)
   const [confirmations, setConfirmations] = useState(null)
+  const [transferFee, setTransferFee] = useState(null)
   const [web3, setWeb3] = useState(null)
   const [chainId, setChainId] = useState(null)
   const [addTokenData, setAddTokenData] = useState(null)
@@ -141,6 +143,18 @@ export default function Transaction() {
         }
         else {
           setConfirmations(null)
+        }
+
+        if (linked && data) {
+          const response = await getTransferFee({ source_chain: linked.sender_chain, destination_chain: linked.recipient_chain, amount: `${data.send?.amount}${linked.asset}` })
+          const fee = response?.fee
+          const asset = fee && assets_data?.find(a => [a?.id?.toLowerCase()].concat(Array.isArray(a?.ibc) ? a.ibc.map(ibc => ibc?.ibc_denom?.toLowerCase()) : a?.ibc?.toLowerCase()).includes(fee.denom?.toLowerCase()))
+          const fromChain = chains_data?.find(c => c.id === linked.sender_chain) || cosmos_chains_data?.find(c => c.id === linked.sender_chain)
+          const decimals = asset?.contracts?.find(c => c.chain_id === fromChain?.chain_id)?.contract_decimals || asset?.ibc?.find(c => c.chain_id === fromChain?.id)?.contract_decimals || asset?.contract_decimals || 6
+          setTransferFee(fee && {
+            ...fee,
+            amount: BigNumber(fee.amount).shiftedBy(-decimals).toNumber(),
+          })
         }
 
         if (data) {
@@ -275,6 +289,8 @@ export default function Transaction() {
     </button>
   )
 
+  const insufficient_fee = transferFee && send?.amount && transferFee.amount > BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || 6)).toNumber()
+
   return (
     <div className="max-w-6.5xl mb-3 mx-auto">
       <SectionTitle
@@ -290,6 +306,21 @@ export default function Transaction() {
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 mt-2 xl:mt-4">
             <Widget
               title={<div className="uppercase text-gray-400 dark:text-gray-600 text-sm sm:text-base font-semibold mb-2">Asset</div>}
+              right={transferFee && (
+                <div className="flex items-center space-x-1 text-xs mb-2">
+                  <span className="text-gray-500">
+                    Fee:
+                  </span>
+                  <span className="flex whitespace-nowrap font-semibold items-center space-x-0.5">
+                    <span className="font-mono">
+                      {numberFormat(transferFee.amount, '0,0.00')}
+                    </span>
+                    <span>
+                      {fromContract?.symbol || asset.symbol}
+                    </span>
+                  </span>
+                </div>
+              )}
               className="max-wax sm:max-w-min border-0 shadow-md rounded-2xl mr-4 xl:mr-6 px-5 lg:px-3 xl:px-5"
             >
               {transaction ?
@@ -418,6 +449,11 @@ export default function Transaction() {
             </Widget>
             <Widget
               title={<div className="leading-4 uppercase text-gray-400 dark:text-gray-600 text-sm sm:text-base font-semibold mb-2">Token Transfers</div>}
+              right={insufficient_fee && (
+                <div className="max-w-min bg-red-100 dark:bg-red-800 border border-red-500 dark:border-red-700 rounded-lg whitespace-nowrap py-0.5 px-2">
+                  Insufficient Fee
+                </div>
+              )}
               className="overflow-x-auto border-0 shadow-md rounded-2xl ml-auto px-5 lg:px-3 xl:px-5"
             >
               <div className="flex flex-col sm:flex-row items-center sm:justify-between space-y-8 sm:space-y-0 my-2">
@@ -856,9 +892,8 @@ export default function Transaction() {
                             content={<div className="max-h-48 overflow-y-auto flex flex-col space-y-1">
                               {confirmations.data.map((c, i) => {
                                 const validator_data = validators_data?.find(v => v?.broadcaster_address?.toLowerCase() === c?.sender?.toLowerCase())
-
                                 return (
-                                  <div className={`min-w-max flex items-${validator_data ? 'start' : 'center'} space-x-2`}>
+                                  <div key={i} className={`min-w-max flex items-${validator_data ? 'start' : 'center'} space-x-2`}>
                                     <div className="flex flex-col">
                                       {validator_data?.description?.moniker && (
                                         <a
