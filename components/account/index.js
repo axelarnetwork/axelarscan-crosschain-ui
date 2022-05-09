@@ -925,7 +925,7 @@ export default function Account() {
 
   return (
     <>
-      <div className={`my-${address ? 6 : 24}`}>
+      <div className="my-6">
         <div className="flex flex-col sm:flex-row items-center justify-center space-x-4">
           <span className="text-lg font-semibold">
             {['ens', 'evm'].includes(addressType) ?

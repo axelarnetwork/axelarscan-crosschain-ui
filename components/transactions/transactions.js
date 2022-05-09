@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useSelector, shallowEqual } from 'react-redux'
 
 import _ from 'lodash'
@@ -14,6 +15,7 @@ import Datatable from '../datatable'
 import Copy from '../copy'
 import Popover from '../popover'
 
+import { transferFee as getTransferFee } from '../../lib/api/cosmos'
 import { type } from '../../lib/object/id'
 import { chainTitle } from '../../lib/object/chain'
 import { getName, numberFormat, ellipseAddress } from '../../lib/utils'
@@ -27,6 +29,36 @@ export default function Transactions({ page_size = 10, data, linkedAddresses, ad
   const { cosmos_chains_data } = { ...cosmos_chains }
   const { assets_data } = { ...assets }
   const { ens_data } = { ...ens }
+
+  const [transferFees, setTransferFees] = useState(null)
+
+  useEffect(() => {
+    const getData = async () => {
+      if (assets_data && data) {
+        let updated = false
+        const fees = _.cloneDeep({ ...transferFees })
+        for (let i = 0; i < data.length; i++) {
+          const tx = data[i]
+          if (tx?.send?.sender_chain && tx.send.recipient_chain && tx.send.denom && !tx.signed && !tx.vote_confirm_deposit) {
+            const asset = assets_data?.find(a => [a?.id?.toLowerCase()].concat(Array.isArray(a?.ibc) ? a.ibc.map(ibc => ibc?.ibc_denom?.toLowerCase()) : a?.ibc?.toLowerCase()).includes(tx.send.denom?.toLowerCase()))
+            const denom = asset?.id || tx.send.denom
+            const key = `${tx.send.sender_chain}_${tx.send.recipient_chain}_${denom}`
+            if (!fees[key]) {
+              const response = await getTransferFee({ source_chain: tx.send.sender_chain, destination_chain: tx.send.recipient_chain, amount: `0${denom}` })
+              if (response?.fee) {
+                fees[key] = response.fee
+                updated = true
+              }
+            }
+          }
+        }
+        if (updated) {
+          setTransferFees(fees)
+        }
+      }
+    }
+    getData()
+  }, [assets_data, data])
 
   const axelarChain = cosmos_chains_data?.find(c => c.id === 'axelarnet')
 
@@ -334,9 +366,25 @@ export default function Transactions({ page_size = 10, data, linkedAddresses, ad
             accessor: 'status',
             disableSortBy: true,
             Cell: props => {
-              const type = props.row.original.send?.type
+              const send = props.row.original.send
+              const type = send?.type
               const fromChain = props.row.original.from_chain
               const toChain = props.row.original.to_chain
+
+              let insufficient_fee = false
+              if (send?.amount) {
+                const asset = assets_data?.find(a => [a?.id?.toLowerCase()].concat(Array.isArray(a?.ibc) ? a.ibc.map(ibc => ibc?.ibc_denom?.toLowerCase()) : a?.ibc?.toLowerCase()).includes(send.denom?.toLowerCase()))
+                const denom = asset?.id || send.denom
+                const key = `${send.sender_chain}_${send.recipient_chain}_${denom}`
+                if (transferFees?.[key]?.amount) {
+                  const fromContract = asset?.contracts?.find(c => c.chain_id === fromChain?.chain_id)
+                  const fromIBC = asset?.ibc?.find(c => c.chain_id === fromChain?.id)
+                  const decimals = fromContract?.contract_decimals || fromIBC?.contract_decimals || asset?.contract_decimals || 6
+                  const send_amount = BigNumber(send.amount).shiftedBy(-decimals).toNumber()
+                  const fee_amount = BigNumber(transferFees[key].amount).shiftedBy(-decimals).toNumber()
+                  insufficient_fee = send_amount < fee_amount
+                }
+              } 
 
               const steps = [
                 { id: 'send', title: 'Send Token', chain: fromChain },
@@ -350,7 +398,7 @@ export default function Transactions({ page_size = 10, data, linkedAddresses, ad
 
               return !props.row.original.skeleton ?
                 <div className="min-w-max flex flex-col space-y-2 mb-4">
-                  {steps.map((step, i) => (
+                  {steps.filter(s => !insufficient_fee || (props.row.original[s.id] && props.row.original[s.id].status !== 'failed')).map((step, i) => (
                     <div key={i} className="flex items-center space-x-1.5">
                       {props.row.original[step.id] ?
                         props.row.original[step.id].status === 'failed' ?
@@ -411,6 +459,11 @@ export default function Transactions({ page_size = 10, data, linkedAddresses, ad
                       </div>
                     </div>
                   ))}
+                  {insufficient_fee && (
+                    <div className="max-w-min bg-red-100 dark:bg-red-800 border border-red-500 dark:border-red-700 rounded-lg whitespace-nowrap py-0.5 px-2">
+                      Insufficient Fee
+                    </div>
+                  )}
                 </div>
                 :
                 <div className="flex-col space-y-2 mb-4">

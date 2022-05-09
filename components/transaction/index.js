@@ -290,7 +290,7 @@ export default function Transaction() {
     </button>
   )
 
-  const insufficient_fee = transferFee && send?.amount && transferFee.amount > BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || fromIBC?.contract_decimals || 6)).toNumber()
+  const insufficient_fee = transferFee && send?.amount && transferFee.amount > BigNumber(send.amount).shiftedBy(-(fromContract?.contract_decimals || fromIBC?.contract_decimals || asset?.contract_decimals || 6)).toNumber()
 
   return (
     <div className="max-w-6.5xl mb-3 mx-auto">

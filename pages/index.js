@@ -24,7 +24,7 @@ export default function Index() {
       <div className="max-w-full mx-auto">
         <Account />
       </div>
-      <div className="dark:bg-black dark:bg-blue-500 dark:bg-yellow-500 dark:bg-green-400 dark:bg-green-600 dark:bg-red-700 dark:bg-gray-700 text-red-500 text-green-500 w-48 sm:w-80 xl:w-80 xl:w-96 my-24" />
+      <div className="dark:bg-black dark:bg-blue-500 dark:bg-yellow-500 dark:bg-green-400 dark:bg-green-600 dark:bg-red-700 dark:bg-gray-700 text-red-500 text-green-500 w-48 sm:w-80 xl:w-80 xl:w-96" />
     </>
   )
 }
