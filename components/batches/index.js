@@ -76,7 +76,7 @@ export default function Batches() {
             ],
             _source: false,
             fields: ['batch_id', 'chain', 'key_id', 'commands.*', 'status', 'signature', 'created_at.*'],
-            size: 100,
+            size: 500,
           }
 
           if (command_id) {

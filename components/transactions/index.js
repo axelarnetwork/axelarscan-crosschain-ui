@@ -87,7 +87,7 @@ export default function TransactionsIndex() {
             sort: [
               { 'send.created_at.ms': 'desc' },
             ],
-            size: 100,
+            size: 500,
           })
 
           setTransactions({ data: response?.data || [], txsTrigger })
